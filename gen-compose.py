@@ -15,6 +15,8 @@ services:
       - LOGGING_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - ${PWD}/server/config.ini:/config.ini
 """
 
 CLIENT_TEMPLATE = """
@@ -27,6 +29,8 @@ CLIENT_TEMPLATE = """
       - CLI_LOG_LEVEL=DEBUG
     networks:
       - testing_net
+    volumes:
+      - ${{PWD}}/client/config.yaml:/config.yaml
     depends_on:
       - server
 """
