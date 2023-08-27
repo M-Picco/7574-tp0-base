@@ -68,14 +68,32 @@ En esta primera parte del trabajo práctico se plantean una serie de ejercicios 
 ### Ejercicio N°1:
 Modificar la definición del DockerCompose para agregar un nuevo cliente al proyecto.
 
+#### Resolución
+
+Ejecutar `git checkout ej1`. Notar que en `docker-compose-dev.yaml` se agrega un nuevo servicio `client2`. Ejecutar `make docker-compose-up` para correrlo y `make docker-compose logs` para visualizarlo.
+
 ### Ejercicio N°1.1:
 Definir un script (en el lenguaje deseado) que permita crear una definición de DockerCompose con una cantidad configurable de clientes.
+
+#### Resolución
+
+Requiere contar con una instalación de `python3` en la máquina host. Ejecutar `git checkout ej1.1`. Se añade un nuevo script en python `gen-compose.py`. Ejecutarlo via `./gen-compose.py -n 5` para generar un nuevo `docker-compose-dev.yaml` con 5 clientes.
 
 ### Ejercicio N°2:
 Modificar el cliente y el servidor para lograr que realizar cambios en el archivo de configuración no requiera un nuevo build de las imágenes de Docker para que los mismos sean efectivos. La configuración a través del archivo correspondiente (`config.ini` y `config.yaml`, dependiendo de la aplicación) debe ser inyectada en el container y persistida afuera de la imagen (hint: `docker volumes`).
 
+#### Resolución
+
+Ejecutar `git checkout ej2`. Se modifica el script de generación `gen-compose.py` para que el archivo resultante monte los archivos de configuración via `volumes`. Levantar el ambiente y ejecutar `docker compose -f docker-compose-dev.yaml exec -it server sh`; ejecutar `cat config.ini`; modificar el archivo `server/config.ini` en la máquina host; ejecutar `cat config.ini` en el contenedor nuevamente y notar que los cambios hechos en la máquina host están reflejados.
+
 ### Ejercicio N°3:
 Crear un script que permita verificar el correcto funcionamiento del servidor utilizando el comando `netcat` para interactuar con el mismo. Dado que el servidor es un EchoServer, se debe enviar un mensaje al servidor y esperar recibir el mismo mensaje enviado. Netcat no debe ser instalado en la máquina _host_ y no se puede exponer puertos del servidor para realizar la comunicación (hint: `docker network`).
+
+#### Resolución
+
+Ejecutar `git checkout ej3`. Se añaden un nuevo Dockerfile para generar una imagen con `OpenBSD netcat` y un script `nc.sh` en el directorio `scripts` que ejecuta la imagen en un contenedor efímero para realizar el health check del servidor. La ejecución de la imagen se da en la misma docker network generada por docker compose, por lo que no es necesario exponer puertos en el servidor. Para ejecutar el health check basta con ejecutar `./scripts/nc.sh`. Se contemplan los casos que el servidor esté funcionando correctamente, que esté pausado (ej: via `docker compose -f docker-compose-dev.yaml stop server`), o que la network de los contenedores (`tp0_testing_net`) no exista.
+
+El script `gen-config.py` es movido al directorio `scripts`.
 
 ### Ejercicio N°4:
 Modificar servidor y cliente para que ambos sistemas terminen de forma _graceful_ al recibir la signal SIGTERM. Terminar la aplicación de forma _graceful_ implica que todos los _file descriptors_ (entre los que se encuentran archivos, sockets, threads y procesos) deben cerrarse correctamente antes que el thread de la aplicación principal muera. Loguear mensajes en el cierre de cada recurso (hint: Verificar que hace el flag `-t` utilizado en el comando `docker compose down`).
