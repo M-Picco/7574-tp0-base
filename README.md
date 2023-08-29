@@ -98,6 +98,12 @@ El script `gen-config.py` es movido al directorio `scripts`.
 ### Ejercicio N°4:
 Modificar servidor y cliente para que ambos sistemas terminen de forma _graceful_ al recibir la signal SIGTERM. Terminar la aplicación de forma _graceful_ implica que todos los _file descriptors_ (entre los que se encuentran archivos, sockets, threads y procesos) deben cerrarse correctamente antes que el thread de la aplicación principal muera. Loguear mensajes en el cierre de cada recurso (hint: Verificar que hace el flag `-t` utilizado en el comando `docker compose down`).
 
+#### Resolución
+
+Ejecutar `git checkout ej4`. Se añaden handlers para la señal SIGTERM tanto en el código del cliente como del servidor. Los loops de ejecución se condicionan a una variable `active` que se enciende al iniciar el loop y se apaga tras invocar el signal handler, provocando la salida del loop principal y liberación de recursos.
+
+En el caso del servidor la estrategia inicial era destruir el socket del servidor al concluir el loop principal, sin embargo se incurría en dos problema: i) primero y principal, puede ocurrir que el socket quede bloqueado en `accept` previo a recibir la señal, estado del cual nunca sale hasta que el proceso es matado (docker envía SIGKILL tras el tiempo indicado en el flag `-t`), por lo que no se llega a cerrar el socket de la forma apropiada via `close`; ii) esto violaría el enfoque RAII adoptado por la clase provista, que inicializa el recurso en contructor. En vista de estos dos problemas, se decidió respetar el enfoque RAII y crear un destructor para la clase Server, en donde se maneja la disposición final del recurso. Una alternativa equivalente hubiese sido implementar los métodos necesarios para emplear el objeto con la sentencia `with` que invoca el método `__exit__` al salir del bloque de código, pudiéndose implementar en este método la lógica de limpieza.
+
 ## Parte 2: Repaso de Comunicaciones
 
 Las secciones de repaso del trabajo práctico plantean un caso de uso denominado **Lotería Nacional**. Para la resolución de las mismas deberá utilizarse como base al código fuente provisto en la primera parte, con las modificaciones agregadas en el ejercicio 4.

@@ -1,13 +1,16 @@
 import socket
 import logging
 
-
 class Server:
     def __init__(self, port, listen_backlog):
+        self.__active = False
         # Initialize server socket
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+
+    def __del__(self):
+        self._server_socket.close()
 
     def run(self):
         """
@@ -18,11 +21,15 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
-        while True:
+        self.__active = True
+        while self.__active:
             client_sock = self.__accept_new_connection()
             self.__handle_client_connection(client_sock)
+
+    def shutdown(self):
+        logging.info("action: shutdown | result: in_progress")
+        self.__active = False
+        logging.info("action: shutdown | result: success")
 
     def __handle_client_connection(self, client_sock):
         """
